@@ -35,6 +35,6 @@ if __name__ == "__main__":
     generator = Generator(
         template='articles/article.html',
         source_dir='sources',
-        output_dir='another_output'
+        output_dir='output'
     )
     generator.build_template()
