@@ -16,7 +16,7 @@ class Generator:
         self.output_dir = output_dir
         self.extensions = ('*.txt', '*.md', '*.markdown', '*.html')
 
-    def _output_file(self, source):
+    def _get_output_file(self, source):
         file_name = os.path.basename(source)
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
@@ -34,11 +34,11 @@ class Generator:
             return markdown.markdown(source)
         return source
 
-    def build_template(self):
+    def build(self):
         list_of_files = self._files_with_extensions(self.extensions)
         for source in list_of_files:
             templ = self.env.get_template(self.template)
-            saved_file = self._output_file(source)
+            saved_file = self._get_output_file(source)
             source_content = open(source, 'r').read()
             source_content = self._handle_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
@@ -49,4 +49,4 @@ if __name__ == "__main__":
         source_dir='sources',
         output_dir='output'
     )
-    generator.build_template()
+    generator.build()
