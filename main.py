@@ -5,10 +5,12 @@ from jinja2.environment import Environment
 import markdown
 
 class Generator:
-    def __init__(self, template='', source_dir='source', output_dir='output'):
+    def __init__(self, start_dir=None, template='', source_dir='source', output_dir='output'):
         current_path = os.path.dirname(os.path.abspath(__file__))
         templates_path = 'templates'
         jinja_loader = FileSystemLoader(current_path + '/' + templates_path)
+
+        self.start_dir = start_dir
 
         self.env = Environment(loader=jinja_loader)
         self.template = template
@@ -43,10 +45,34 @@ class Generator:
             source_content = self._handle_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
 
+    def _create_dir(self, directory):
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
+            return True
+        else:
+            print 'directory \"' + directory + '" exists'
+            return False
+
+    def _defined_or_defaut_dir(self, default, directory):
+        if (directory):
+            self._create_dir(directory)
+        else:
+            self._create_dir(default)
+
+    def generate(self, project_name):
+        base_path = os.getcwd() + '/' + project_name + '/'
+        self._create_dir(project_name)
+        self._create_dir(base_path + 'templates')
+        self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
+        self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
+
+
+
 if __name__ == "__main__":
     generator = Generator(
         template='articles/article.html',
         source_dir='sources',
         output_dir='output'
     )
+    generator.generate('project')
     generator.build()
