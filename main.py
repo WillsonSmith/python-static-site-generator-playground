@@ -4,13 +4,14 @@ from jinja2 import FileSystemLoader
 from jinja2.environment import Environment
 import markdown
 
-class Generator:
-    def __init__(self, start_dir=None, template='', source_dir='source', output_dir='output'):
+import getopt #command line arguments
+import sys
+
+class Compiler:
+    def __init__(self, template='', source_dir='source', output_dir='output'):
         current_path = os.path.dirname(os.path.abspath(__file__))
         templates_path = 'templates'
         jinja_loader = FileSystemLoader(current_path + '/' + templates_path)
-
-        self.start_dir = start_dir
 
         self.env = Environment(loader=jinja_loader)
         self.template = template
@@ -36,7 +37,7 @@ class Generator:
             return markdown.markdown(source)
         return source
 
-    def build(self):
+    def compile(self):
         list_of_files = self._files_with_extensions(self.extensions)
         for source in list_of_files:
             templ = self.env.get_template(self.template)
@@ -44,6 +45,11 @@ class Generator:
             source_content = open(source, 'r').read()
             source_content = self._handle_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
+
+class Generator:
+    def __init__(self, source_dir, output_dir):
+        self.source_dir = source_dir
+        self.output_dir = output_dir
 
     def _create_dir(self, directory):
         if not os.path.isdir(directory):
@@ -66,13 +72,34 @@ class Generator:
         self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
         self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
 
+def main(argv):
+    project_name = None
+    source_directory = 'sources'
+    output_directory = 'output'
+
+    try:
+        opts, args = getopt.getopt(argv, 'hn:i:o:', ['name=', 'sourcedir=', 'outputdir='])
+    except getopt.GetoptError:
+        print 'problem, try: main.py -s <sourcedir> -o <outputdir>'
+        raise SystemExit
+    for opt, arg in opts:
+        if opt == '-h':
+            print 'main.py -i <sourcedir> -o <outputdir>'
+            raise SystemExit
+        elif opt in ('-n', '--name'):
+            project_name = arg
+        elif opt in ('-s', '--sourcedir'):
+            source_directory = arg
+        elif opt in ('-o', '--outputdir'):
+            output_directory = arg
+
+    if not project_name:
+        print 'you must specify a project name with "-n" or "--name"'
+    else:
+        Generator(source_directory, output_directory).generate(project_name)
+
+
 
 
 if __name__ == "__main__":
-    generator = Generator(
-        template='articles/article.html',
-        source_dir='sources',
-        output_dir='output'
-    )
-    generator.generate('project')
-    generator.build()
+    main(sys.argv[1:])
