@@ -72,7 +72,7 @@ class Generator:
         self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
         self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
 
-def main(argv):
+def main_generate(argv):
     project_name = None
     source_directory = 'sources'
     output_directory = 'output'
@@ -102,4 +102,9 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    command = sys.argv[1].lower()
+    if command == 'generate':
+        main_generate(sys.argv[2:])
+    else:
+        print 'need to specify "generate" as the first parameter'
+    # main(sys.argv[1:])
