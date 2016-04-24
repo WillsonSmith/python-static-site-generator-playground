@@ -63,7 +63,7 @@ class Compiler(object):
             source_content = compile_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
 
-class Generator(object): #should create config file for source and output
+class Generator(object):
     def __init__(self, source_dir, output_dir):
         self.source_dir = source_dir
         self.output_dir = output_dir
