@@ -7,6 +7,8 @@ import markdown
 import getopt #command line arguments
 import sys
 
+import ConfigParser
+
 class Compiler:
     def __init__(self, template='', source_dir='source', output_dir='output'):
         current_path = os.path.dirname(os.path.abspath(__file__))
@@ -46,31 +48,41 @@ class Compiler:
             source_content = self._handle_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
 
-class Generator:
+class Generator: #should create config file for source and output
     def __init__(self, source_dir, output_dir):
         self.source_dir = source_dir
         self.output_dir = output_dir
 
-    def _create_dir(self, directory):
-        if not os.path.isdir(directory):
-            os.mkdir(directory)
-            return True
-        else:
-            print 'directory \"' + directory + '" exists'
-            return False
+    def _create_dirs(self, *directories):
+        for directory in directories:
+            print directory
+            if not os.path.isdir(directory):
+                os.mkdir(directory)
+            else:
+                print 'directory \"' + directory + '" exists'
 
     def _defined_or_defaut_dir(self, default, directory):
         if (directory):
-            self._create_dir(directory)
+            return directory
         else:
-            self._create_dir(default)
+            return default
+
+    def _create_config(self, base_directory):
+        config = ConfigParser.RawConfigParser()
+        config.add_section('directories')
+        config.set('directories', 'source_directory', self.source_dir)
+        config.set('directories', 'output_directory', self.output_dir)
+        with open(base_directory + 'config.cfg', 'wb') as configfile:
+            config.write(configfile)
+
 
     def generate(self, project_name):
         base_path = os.getcwd() + '/' + project_name + '/'
-        self._create_dir(project_name)
-        self._create_dir(base_path + 'templates')
-        self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
-        self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
+        template_dir = base_path + 'templates'
+        source_dir = self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
+        output_dir = self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
+        self._create_dirs(project_name, template_dir, source_dir, output_dir)
+        self._create_config(base_path)
 
 def main_generate(argv):
     project_name = None
