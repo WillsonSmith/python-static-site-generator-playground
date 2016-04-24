@@ -44,10 +44,11 @@ def create_directories(*directories):
             print 'directory \"' + directory + '" exists'
 
 
-def build_site(template='', source_dir='source', output_dir='output'):
+def build(template='', source_dir='source', output_dir='output'):
     """
     handles compiling sources to pages
     """
+    print(os.getcwd())
     current_path = os.path.dirname(os.path.abspath(__file__))
     jinja_loader = FileSystemLoader(current_path + '/templates')
     env = Environment(loader=jinja_loader)
@@ -71,20 +72,13 @@ def build_site(template='', source_dir='source', output_dir='output'):
             list_of_files.extend(glob.glob(source_dir + '/' + extension))
         return list_of_files
 
-    def build():
-        """
-        builds a list of files with the defined template
-        """
-        list_of_files = _files_with_extensions(extensions)
-        for source in list_of_files:
-            templ = env.get_template(template)
-            saved_file = _get_output_file(source)
-            source_content = open(source, 'r').read()
-            source_content = compile_markdown(source, source_content)
-            saved_file.write(templ.render(source=source_content))
-    build()
-
-
+    list_of_files = _files_with_extensions(extensions)
+    for source in list_of_files:
+        templ = env.get_template(template)
+        saved_file = _get_output_file(source)
+        source_content = open(source, 'r').read()
+        source_content = compile_markdown(source, source_content)
+        saved_file.write(templ.render(source=source_content))
 
 class Generator(object):
     """
@@ -148,12 +142,24 @@ def main_generate(argv):
         Generator(source_directory, output_directory).generate(project_name)
         os.chdir(project_name)
 
-
-
+def main_build(argv):
+    """
+    builds your project based on your configuration file and given template
+    """
+    #WIP - forces to use /project while building
+    os.chdir('project')
+    template = 'articles/article.html'
+    config = ConfigParser.RawConfigParser()
+    config.read('config.cfg')
+    source_directory = config.get('directories', 'source_directory')
+    output_directory = config.get('directories', 'source_directory')
+    build(template=template, source_dir=source_directory, output_dir=output_directory)
 
 if __name__ == "__main__":
     COMMAND = sys.argv[1].lower()
     if COMMAND == 'generate':
         main_generate(sys.argv[2:])
+    elif COMMAND == 'build':
+        main_build(sys.argv[2:])
     else:
         print 'need to specify "generate" as the first parameter'
