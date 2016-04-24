@@ -1,3 +1,7 @@
+"""
+static site generator
+"""
+
 import os
 import glob
 
@@ -11,64 +15,90 @@ from jinja2.environment import Environment
 import markdown
 
 def compile_markdown(file_name, source):
+    """
+    takes a file and checks if it is a markdown file, compiles markdown if it is
+    """
     file_extension = os.path.splitext(file_name)[1]
-    if file_extension == '.md':
+    if  file_extension in ('.md', '.markdown'):
         return markdown.markdown(source)
     return source
 
 def defined_or_defaut_dir(default, directory):
+    """
+    if given a directory it will return that directory, otherwise it returns the default
+    """
     if directory:
         return directory
     else:
         return default
 
 def create_directories(*directories):
+    """
+    accepts as many directories as you give it
+    checks if each directory exists, if it does not exist it creates the directory
+    """
     for directory in directories:
-        print directory
         if not os.path.isdir(directory):
             os.mkdir(directory)
         else:
             print 'directory \"' + directory + '" exists'
 
-class Compiler(object):
-    def __init__(self, template='', source_dir='source', output_dir='output'):
-        current_path = os.path.dirname(os.path.abspath(__file__))
-        templates_path = 'templates'
-        jinja_loader = FileSystemLoader(current_path + '/' + templates_path)
 
-        self.env = Environment(loader=jinja_loader)
-        self.template = template
-        self.source_dir = source_dir
-        self.output_dir = output_dir
-        self.extensions = ('*.txt', '*.md', '*.markdown', '*.html')
+def build_site(template='', source_dir='source', output_dir='output'):
+    """
+    handles compiling sources to pages
+    """
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    jinja_loader = FileSystemLoader(current_path + '/templates')
+    env = Environment(loader=jinja_loader)
+    extensions = ('*.txt', '*.md', '*.markdown', '*.html')
 
-    def _get_output_file(self, source):
+    def _get_output_file(source):
+        """
+        will create directory for the output if doesn't exist, and write your compiled html
+        """
         file_name = os.path.basename(source)
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-        return open(self.output_dir + '/' + file_name + '.html', 'w+')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        return open(output_dir + '/' + file_name + '.html', 'w+')
 
-    def _files_with_extensions(self, extensions):
+    def _files_with_extensions(extensions):
+        """
+        will list all files in directory with the given extensions
+        """
         list_of_files = []
         for extension in extensions:
-            list_of_files.extend(glob.glob(self.source_dir + '/' + extension))
+            list_of_files.extend(glob.glob(source_dir + '/' + extension))
         return list_of_files
 
-    def compile(self):
-        list_of_files = self._files_with_extensions(self.extensions)
+    def build():
+        """
+        builds a list of files with the defined template
+        """
+        list_of_files = _files_with_extensions(extensions)
         for source in list_of_files:
-            templ = self.env.get_template(self.template)
-            saved_file = self._get_output_file(source)
+            templ = env.get_template(template)
+            saved_file = _get_output_file(source)
             source_content = open(source, 'r').read()
             source_content = compile_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
+    build()
+
+
 
 class Generator(object):
+    """
+    this class is used to generate various parts of your static site
+    """
     def __init__(self, source_dir, output_dir):
         self.source_dir = source_dir
         self.output_dir = output_dir
 
     def create_config(self, base_directory):
+        """
+        if you need a new config you can use this. By default this will be executed
+        when you generate your project.
+        """
         config = ConfigParser.RawConfigParser()
         config.add_section('directories')
         config.set('directories', 'source_directory', self.source_dir)
@@ -78,6 +108,9 @@ class Generator(object):
 
 
     def generate(self, project_name):
+        """
+        handles the actual creation of your project folder
+        """
         base_path = os.getcwd() + '/' + project_name + '/'
         template_dir = base_path + 'templates'
         source_dir = defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
@@ -86,6 +119,9 @@ class Generator(object):
         self.create_config(base_path)
 
 def main_generate(argv):
+    """
+    the function that is called if using the command line to generate your new project
+    """
     project_name = None
     source_directory = 'sources'
     output_directory = 'output'
@@ -110,14 +146,14 @@ def main_generate(argv):
         print 'you must specify a project name with "-n" or "--name"'
     else:
         Generator(source_directory, output_directory).generate(project_name)
+        os.chdir(project_name)
 
 
 
 
 if __name__ == "__main__":
-    Command = sys.argv[1].lower()
-    if Command == 'generate':
+    COMMAND = sys.argv[1].lower()
+    if COMMAND == 'generate':
         main_generate(sys.argv[2:])
     else:
         print 'need to specify "generate" as the first parameter'
-    # main(sys.argv[1:])
