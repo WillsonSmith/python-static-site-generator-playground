@@ -152,7 +152,7 @@ def main_build(argv):
     config = ConfigParser.RawConfigParser()
     config.read('config.cfg')
     source_directory = config.get('directories', 'source_directory')
-    output_directory = config.get('directories', 'source_directory')
+    output_directory = config.get('directories', 'output_directory')
     build(template=template, source_dir=source_directory, output_dir=output_directory)
 
 if __name__ == "__main__":
