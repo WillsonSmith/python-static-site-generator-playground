@@ -1,15 +1,36 @@
 import os
 import glob
-from jinja2 import FileSystemLoader
-from jinja2.environment import Environment
-import markdown
 
 import getopt #command line arguments
 import sys
 
 import ConfigParser
 
-class Compiler:
+from jinja2 import FileSystemLoader
+from jinja2.environment import Environment
+import markdown
+
+def compile_markdown(file_name, source):
+    file_extension = os.path.splitext(file_name)[1]
+    if file_extension == '.md':
+        return markdown.markdown(source)
+    return source
+
+def defined_or_defaut_dir(default, directory):
+    if directory:
+        return directory
+    else:
+        return default
+
+def create_directories(*directories):
+    for directory in directories:
+        print directory
+        if not os.path.isdir(directory):
+            os.mkdir(directory)
+        else:
+            print 'directory \"' + directory + '" exists'
+
+class Compiler(object):
     def __init__(self, template='', source_dir='source', output_dir='output'):
         current_path = os.path.dirname(os.path.abspath(__file__))
         templates_path = 'templates'
@@ -33,41 +54,21 @@ class Compiler:
             list_of_files.extend(glob.glob(self.source_dir + '/' + extension))
         return list_of_files
 
-    def _handle_markdown(self, file_name, source):
-        file_extension = os.path.splitext(file_name)[1]
-        if file_extension == '.md':
-            return markdown.markdown(source)
-        return source
-
     def compile(self):
         list_of_files = self._files_with_extensions(self.extensions)
         for source in list_of_files:
             templ = self.env.get_template(self.template)
             saved_file = self._get_output_file(source)
             source_content = open(source, 'r').read()
-            source_content = self._handle_markdown(source, source_content)
+            source_content = compile_markdown(source, source_content)
             saved_file.write(templ.render(source=source_content))
 
-class Generator: #should create config file for source and output
+class Generator(object): #should create config file for source and output
     def __init__(self, source_dir, output_dir):
         self.source_dir = source_dir
         self.output_dir = output_dir
 
-    def _create_dirs(self, *directories):
-        for directory in directories:
-            print directory
-            if not os.path.isdir(directory):
-                os.mkdir(directory)
-            else:
-                print 'directory \"' + directory + '" exists'
-
-    def _defined_or_defaut_dir(self, default, directory):
-        if (directory):
-            return directory
-        else:
-            return default
-
-    def _create_config(self, base_directory):
+    def create_config(self, base_directory):
         config = ConfigParser.RawConfigParser()
         config.add_section('directories')
         config.set('directories', 'source_directory', self.source_dir)
@@ -79,10 +80,10 @@ class Generator: #should create config file for source and output
     def generate(self, project_name):
         base_path = os.getcwd() + '/' + project_name + '/'
         template_dir = base_path + 'templates'
-        source_dir = self._defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
-        output_dir = self._defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
-        self._create_dirs(project_name, template_dir, source_dir, output_dir)
-        self._create_config(base_path)
+        source_dir = defined_or_defaut_dir(base_path + 'sources', base_path + self.source_dir)
+        output_dir = defined_or_defaut_dir(base_path + 'output', base_path + self.output_dir)
+        create_directories(project_name, template_dir, source_dir, output_dir)
+        self.create_config(base_path)
 
 def main_generate(argv):
     project_name = None
@@ -114,8 +115,8 @@ def main_generate(argv):
 
 
 if __name__ == "__main__":
-    command = sys.argv[1].lower()
-    if command == 'generate':
+    Command = sys.argv[1].lower()
+    if Command == 'generate':
         main_generate(sys.argv[2:])
     else:
         print 'need to specify "generate" as the first parameter'
