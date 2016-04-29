@@ -142,18 +142,46 @@ def main_generate(argv):
         Generator(source_directory, output_directory).generate(project_name)
         os.chdir(project_name)
 
+
 def main_build(argv):
     """
     builds your project based on your configuration file and given template
     """
-    #WIP - forces to use /project while building
-    os.chdir('project')
-    template = 'articles/article.html'
+    template = None
+    start_directory = None
+    source_directory = 'sources'
+    output_directory = 'output'
+
     config = ConfigParser.RawConfigParser()
     config.read('config.cfg')
-    source_directory = config.get('directories', 'source_directory')
-    output_directory = config.get('directories', 'output_directory')
-    build(template=template, source_dir=source_directory, output_dir=output_directory)
+    if config.has_section('directories'):
+        source_directory = config.get('directories', 'source_directory')
+        output_directory = config.get('directories', 'output_directory')
+
+    try:
+        opts, args = getopt.getopt(argv, 'ht:s:o:d:', ['template=', 'sourcedir=', 'outputdir=', 'directory='])
+    except:
+        print 'problem, try: main.py -t <template> -s <sourcedir> -o <outputdir>'
+        raise SystemExit
+    for opt, arg in opts:
+        if opt == '-h':
+            print 'main.py -t <template> -s <sourcedir> -o <outputdir>'
+        elif opt in ('-t', '--template'):
+            template = arg
+        elif opt in ('-s', '--sourcedir'):
+            source_directory = arg
+        elif opt in ('-o', '--outputdir'):
+            output_directory = arg
+        elif opt in ('-d', '--directory'):
+            start_directory = arg
+
+    if start_directory:
+        os.chdir(start_directory)
+
+    if not template:
+        print 'you must supply a template with -t or --template'
+    else:
+        build(template=template, source_dir=source_directory, output_dir=output_directory)
 
 if __name__ == "__main__":
     COMMAND = sys.argv[1].lower()
